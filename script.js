@@ -44,6 +44,9 @@
     const exportKeepDetails = document.getElementById('exportKeepDetails');
     const pasteModal = document.getElementById('pasteImportModal');
     const changelogModal = document.getElementById('changelogModal');
+    const changelogTitle = document.getElementById('changelogModalTitle');
+    const changelogContent = document.getElementById('changelogContent');
+    const changelogActions = document.getElementById('changelogActions');
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
     const sidebarVersionDisplay = document.getElementById('sidebarVersionDisplay');
@@ -657,7 +660,7 @@
             const res = await fetch('./versions.json');
             if (!res.ok) throw new Error('versions.json不存在');
             versions = await res.json();
-            // 简单按版本字符串倒序（假设格式为 v1.2.3）
+            // 按版本字符串倒序（假设格式为 v1.2.3）
             versions.sort((a, b) => (a.version > b.version ? -1 : 1));
             return true;
         } catch (error) {
@@ -678,8 +681,11 @@
 
     function renderCurrentChangelog() {
         if (!versions.length) {
-            document.getElementById('changelogContent').innerText = '暂无更新日志';
-            document.getElementById('changelogActions').innerHTML = '';
+            changelogContent.innerText = '暂无更新日志';
+            changelogActions.innerHTML = '<button class="btn-secondary" id="closeChangelogBtn">关闭</button>';
+            document.getElementById('closeChangelogBtn').addEventListener('click', () => {
+                changelogModal.classList.remove('show');
+            });
             return;
         }
         // 找出版本号与currentVersion匹配的版本，如果没有则取第一个
@@ -689,23 +695,22 @@
     }
 
     function renderChangelog(versionObj) {
-        const title = document.getElementById('changelogModalTitle');
-        title.innerText = `📜 ${versionObj.version} 更新日志` + (versionObj.date ? ` (${versionObj.date})` : '');
+        changelogTitle.innerText = `📜 ${versionObj.version} 更新日志` + (versionObj.date ? ` (${versionObj.date})` : '');
         let contentHtml = '';
         if (Array.isArray(versionObj.content)) {
             contentHtml = versionObj.content.map(item => `• ${item}`).join('<br>');
         } else {
             contentHtml = versionObj.content.replace(/\n/g, '<br>');
         }
-        document.getElementById('changelogContent').innerHTML = contentHtml;
+        changelogContent.innerHTML = contentHtml;
         
         // 生成底部按钮
         let actionsHtml = '';
         if (versions.length > 1) {
-            actionsHtml = `<button class="btn-secondary" id="viewAllVersionsBtn">📋 查看全部版本</button>`;
+            actionsHtml += `<button class="btn-secondary" id="viewAllVersionsBtn">📋 查看全部版本</button>`;
         }
         actionsHtml += `<button class="btn-secondary" id="closeChangelogBtn">关闭</button>`;
-        document.getElementById('changelogActions').innerHTML = actionsHtml;
+        changelogActions.innerHTML = actionsHtml;
         
         document.getElementById('viewAllVersionsBtn')?.addEventListener('click', () => {
             renderVersionList();
@@ -716,17 +721,16 @@
     }
 
     function renderVersionList() {
-        const title = document.getElementById('changelogModalTitle');
-        title.innerText = '📋 所有版本';
+        changelogTitle.innerText = '📋 所有版本';
         let listHtml = '<div style="display:flex; flex-direction:column; gap:8px;">';
         versions.forEach(v => {
             listHtml += `<div class="version-item" data-version="${v.version}" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;">${v.version} ${v.date ? `(${v.date})` : ''}</div>`;
         });
         listHtml += '</div>';
-        document.getElementById('changelogContent').innerHTML = listHtml;
+        changelogContent.innerHTML = listHtml;
         
         const actionsHtml = `<button class="btn-secondary" id="backToCurrentBtn">🔙 返回当前版本</button><button class="btn-secondary" id="closeChangelogBtn">关闭</button>`;
-        document.getElementById('changelogActions').innerHTML = actionsHtml;
+        changelogActions.innerHTML = actionsHtml;
         
         // 为每个版本项添加点击事件
         document.querySelectorAll('.version-item').forEach(item => {
