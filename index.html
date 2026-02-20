@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>红包派对 · 全屏动效</title>
+    <!-- 引入外部 CSS -->
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入 CryptoJS 用于加密存档（必须在 JS 之前） -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+</head>
+<body>
+<div class="chat-container">
+    <div class="chat-header">
+        <div class="header-left">
+            <span>🧧 红包派对</span>
+        </div>
+        <div class="header-actions">
+            <span class="status-badge" id="activeStatus">🔥活跃</span>
+            <span class="balance-area" id="balanceDisplay">100.00</span>
+            <!-- 导入导出按钮 -->
+            <button class="icon-btn" id="exportBtn" title="导出加密存档">⬇️</button>
+            <button class="icon-btn" id="importBtn" title="导入存档">⬆️</button>
+        </div>
+    </div>
+    <div class="message-area" id="messageArea"></div>
+    <div class="input-area">
+        <button class="redpacket-btn" id="showRedpacketModal">发红包</button>
+        <input type="text" id="chatInput" placeholder="说句话..." maxlength="40">
+        <button id="sendMsgBtn">发送</button>
+    </div>
+</div>
+
+<!-- 隐藏的文件导入输入框 -->
+<input type="file" id="importFile" accept=".txt,.json" style="display: none;">
+
+<!-- 发红包弹窗 -->
+<div class="modal" id="redpacketModal">
+    <div class="modal-card">
+        <h3>发红包 🧧</h3>
+        <label>金额 (元)</label>
+        <input type="number" id="rpAmount" min="0.01" step="0.01" value="2.00">
+        <label>个数 (1-6)</label>
+        <input type="number" id="rpCount" min="1" max="6" value="3">
+        <label>祝福语</label>
+        <textarea id="rpBlessing" maxlength="30" placeholder="恭喜发财，大吉大利" rows="2">恭喜发财，大吉大利</textarea>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="cancelRedpacket">取消</button>
+            <button class="btn-primary" id="confirmRedpacket">塞钱进红包</button>
+        </div>
+    </div>
+</div>
+
+<!-- 导出选项模态框 -->
+<div class="modal" id="exportOptionsModal">
+    <div class="modal-card">
+        <h3>⬇️ 导出存档选项</h3>
+        <div class="export-option-item">
+            <label>保留最近 <input type="number" id="exportMsgCount" min="0" value="50" placeholder="全部"> 条消息</label>
+            <span style="font-size:12px; color:#999;">(0或留空表示全部)</span>
+        </div>
+        <div class="export-option-item">
+            <label style="justify-content: space-between; width:100%;">
+                <span>保存红包领取详情</span>
+                <input type="checkbox" id="exportKeepDetails" checked>
+            </label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" id="cancelExport">取消</button>
+            <button class="btn-primary" id="confirmExport">确认导出</button>
+        </div>
+    </div>
+</div>
+
+<!-- 开红包/结果全屏模态 -->
+<div class="modal" id="openResultModal">
+    <div id="dynamicRedpacketContent" style="width:100%; height:100%; display: flex; align-items: center; justify-content: center;"></div>
+</div>
+
+<!-- 引入外部 JavaScript -->
+<script src="script.js"></script>
+</body>
+</html>
