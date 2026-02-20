@@ -331,7 +331,7 @@
         if (SIM_USERS.length === 0) return;
         const sender = SIM_USERS[Math.floor(Math.random() * SIM_USERS.length)];
 
-        let baseAmount = 2.0;
+        let baseAmount = 5.0;
         if (recentRedpacketAmounts.length > 0) {
             const avgRecent = recentRedpacketAmounts.reduce((a,b)=>a+b,0) / recentRedpacketAmounts.length;
             baseAmount = Math.min(10, Math.max(0.5, avgRecent * 1.2));
