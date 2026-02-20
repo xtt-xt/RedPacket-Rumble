@@ -25,6 +25,10 @@
     let keywordRules = [];
     let rulesLoaded = false;
 
+    // 版本相关
+    let versions = [];
+    let currentVersion = null;
+
     const STORAGE_KEY = 'hongbao2025';
 
     // DOM 元素
@@ -634,28 +638,110 @@
         }
     }
 
-    // ----- 读取版本号并显示在侧边栏 -----
+    // ----- 版本相关功能 -----
     async function displayVersionInSidebar() {
         try {
             const res = await fetch('./version.txt');
             if (!res.ok) throw new Error();
             const text = await res.text();
-            sidebarVersionDisplay.innerText = text.trim() || '未知版本';
+            currentVersion = text.trim() || '未知版本';
+            sidebarVersionDisplay.innerText = currentVersion;
         } catch {
             sidebarVersionDisplay.innerText = '未找到版本文件';
+            currentVersion = '未知版本';
         }
     }
 
-    // ----- 读取更新日志（弹窗）-----
-    async function fetchChangelog() {
+    async function fetchVersions() {
         try {
-            const res = await fetch('./changelog.txt');
-            if (!res.ok) throw new Error();
-            const text = await res.text();
-            document.getElementById('changelogContent').innerText = text.trim() || '暂无更新记录';
-        } catch {
-            document.getElementById('changelogContent').innerText = '未找到更新日志文件';
+            const res = await fetch('./versions.json');
+            if (!res.ok) throw new Error('versions.json不存在');
+            versions = await res.json();
+            // 简单按版本字符串倒序（假设格式为 v1.2.3）
+            versions.sort((a, b) => (a.version > b.version ? -1 : 1));
+            return true;
+        } catch (error) {
+            console.warn('加载版本历史失败', error);
+            // 尝试读取旧的changelog.txt作为备选（单条）
+            try {
+                const res = await fetch('./changelog.txt');
+                if (res.ok) {
+                    const text = await res.text();
+                    versions = [{ version: currentVersion || '当前版本', date: '', content: text }];
+                    return true;
+                }
+            } catch (e) {}
+            versions = [];
+            return false;
         }
+    }
+
+    function renderCurrentChangelog() {
+        if (!versions.length) {
+            document.getElementById('changelogContent').innerText = '暂无更新日志';
+            document.getElementById('changelogActions').innerHTML = '';
+            return;
+        }
+        // 找出版本号与currentVersion匹配的版本，如果没有则取第一个
+        let ver = versions.find(v => v.version === currentVersion);
+        if (!ver) ver = versions[0];
+        renderChangelog(ver);
+    }
+
+    function renderChangelog(versionObj) {
+        const title = document.getElementById('changelogModalTitle');
+        title.innerText = `📜 ${versionObj.version} 更新日志` + (versionObj.date ? ` (${versionObj.date})` : '');
+        let contentHtml = '';
+        if (Array.isArray(versionObj.content)) {
+            contentHtml = versionObj.content.map(item => `• ${item}`).join('<br>');
+        } else {
+            contentHtml = versionObj.content.replace(/\n/g, '<br>');
+        }
+        document.getElementById('changelogContent').innerHTML = contentHtml;
+        
+        // 生成底部按钮
+        let actionsHtml = '';
+        if (versions.length > 1) {
+            actionsHtml = `<button class="btn-secondary" id="viewAllVersionsBtn">📋 查看全部版本</button>`;
+        }
+        actionsHtml += `<button class="btn-secondary" id="closeChangelogBtn">关闭</button>`;
+        document.getElementById('changelogActions').innerHTML = actionsHtml;
+        
+        document.getElementById('viewAllVersionsBtn')?.addEventListener('click', () => {
+            renderVersionList();
+        });
+        document.getElementById('closeChangelogBtn').addEventListener('click', () => {
+            changelogModal.classList.remove('show');
+        });
+    }
+
+    function renderVersionList() {
+        const title = document.getElementById('changelogModalTitle');
+        title.innerText = '📋 所有版本';
+        let listHtml = '<div style="display:flex; flex-direction:column; gap:8px;">';
+        versions.forEach(v => {
+            listHtml += `<div class="version-item" data-version="${v.version}" style="padding:8px; border-bottom:1px solid #eee; cursor:pointer;">${v.version} ${v.date ? `(${v.date})` : ''}</div>`;
+        });
+        listHtml += '</div>';
+        document.getElementById('changelogContent').innerHTML = listHtml;
+        
+        const actionsHtml = `<button class="btn-secondary" id="backToCurrentBtn">🔙 返回当前版本</button><button class="btn-secondary" id="closeChangelogBtn">关闭</button>`;
+        document.getElementById('changelogActions').innerHTML = actionsHtml;
+        
+        // 为每个版本项添加点击事件
+        document.querySelectorAll('.version-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const ver = versions.find(v => v.version === item.dataset.version);
+                if (ver) renderChangelog(ver);
+            });
+        });
+        
+        document.getElementById('backToCurrentBtn').addEventListener('click', () => {
+            renderCurrentChangelog();
+        });
+        document.getElementById('closeChangelogBtn').addEventListener('click', () => {
+            changelogModal.classList.remove('show');
+        });
     }
 
     // ----- 初始演示数据 -----
@@ -726,9 +812,12 @@
         sidebar.classList.remove('open');
         window.open('https://xtt-xt.github.io/RedPacket-Rumble/', '_blank');
     });
-    sidebarChangelog.addEventListener('click', () => {
+    sidebarChangelog.addEventListener('click', async () => {
         sidebar.classList.remove('open');
-        fetchChangelog();
+        if (versions.length === 0) {
+            await fetchVersions();
+        }
+        renderCurrentChangelog();
         changelogModal.classList.add('show');
     });
 
@@ -792,10 +881,7 @@
         if (e.target === pasteModal) pasteModal.classList.remove('show');
     });
 
-    // 更新日志弹窗
-    document.getElementById('closeChangelog').addEventListener('click', () => {
-        changelogModal.classList.remove('show');
-    });
+    // 更新日志模态框点击背景关闭
     changelogModal.addEventListener('click', (e) => {
         if (e.target === changelogModal) changelogModal.classList.remove('show');
     });
