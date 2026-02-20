@@ -50,8 +50,6 @@
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
     const sidebarVersionDisplay = document.getElementById('sidebarVersionDisplay');
-    const chatInput = document.getElementById('chatInput');
-    const sendMsgBtn = document.getElementById('sendMsgBtn');
 
     // 侧边栏菜单项
     const sidebarUpload = document.getElementById('sidebarUpload');
@@ -750,23 +748,6 @@
         });
     }
 
-    // ----- 输入框高度自动调整 -----
-    function adjustTextareaHeight() {
-        chatInput.style.height = 'auto';
-        const newHeight = Math.min(100, chatInput.scrollHeight); // 最大100px
-        chatInput.style.height = newHeight + 'px';
-    }
-
-    // ----- 发送消息 -----
-    function sendMessage() {
-        const text = chatInput.value.trim();
-        if (text) {
-            addTextMessage(MY_NAME, text);
-            chatInput.value = '';
-            adjustTextareaHeight(); // 发送后重置高度
-        }
-    }
-
     // ----- 初始演示数据 -----
     function initDemo() {
         if (!loadFromLocalStorage()) {
@@ -863,17 +844,17 @@
         addRedpacket(MY_NAME, amount, count, blessing);
     });
 
-    // 发送消息 - 按钮点击
-    sendMsgBtn.addEventListener('click', sendMessage);
-
-    // 输入框事件：高度自动调整，不再监听 Enter 发送
-    chatInput.addEventListener('input', adjustTextareaHeight);
-    // 可选：按 Ctrl+Enter 发送（移动端不常用，保留按钮发送即可）
-    chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            sendMessage();
+    // 发送消息
+    document.getElementById('sendMsgBtn').addEventListener('click', () => {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (text) {
+            addTextMessage(MY_NAME, text);
+            input.value = '';
         }
+    });
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') document.getElementById('sendMsgBtn').click();
     });
 
     // 关闭结果模态框（点击背景）
