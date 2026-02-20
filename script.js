@@ -15,11 +15,11 @@
 
     let myBalance = 100.0;
     let messages = [];
-    let redPackets = new Map();
+    let redPackets = new Map();          // key: rpId
     let lastRedPacketTime = Date.now();
     let activeFactor = 1.0;
     let recentRedpacketAmounts = [];
-    let grabIntervals = new Map();
+    let grabIntervals = new Map();       // 自动抢包定时器
 
     // 规则相关
     let keywordRules = [];
@@ -27,7 +27,7 @@
 
     const STORAGE_KEY = 'hongbao2025';
 
-    // DOM
+    // DOM 元素
     const messageArea = document.getElementById('messageArea');
     const balanceSpan = document.getElementById('balanceDisplay');
     const modal = document.getElementById('redpacketModal');
@@ -38,31 +38,21 @@
     const exportOptionsModal = document.getElementById('exportOptionsModal');
     const exportMsgCount = document.getElementById('exportMsgCount');
     const exportKeepDetails = document.getElementById('exportKeepDetails');
+    const pasteModal = document.getElementById('pasteImportModal');
+    const changelogModal = document.getElementById('changelogModal');
+    const versionModal = document.getElementById('versionModal');
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menuToggle');
 
-    // ----- 新增：粘贴导入模态框（动态创建）-----
-    const pasteModal = document.createElement('div');
-    pasteModal.className = 'modal';
-    pasteModal.id = 'pasteImportModal';
-    pasteModal.innerHTML = `
-        <div class="modal-card">
-            <h3>📋 粘贴加密存档</h3>
-            <textarea id="pasteArchiveText" rows="6" placeholder="请将加密文本粘贴到这里..." style="width:100%; padding:12px; border-radius:16px; border:1px solid #ddd; margin:16px 0; resize:vertical;"></textarea>
-            <div class="modal-actions">
-                <button class="btn-secondary" id="cancelPaste">取消</button>
-                <button class="btn-primary" id="confirmPaste">确认导入</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(pasteModal);
-
-    // 新增粘贴按钮到 header（放在导入按钮旁边）
-    const headerActions = document.querySelector('.header-actions');
-    const pasteBtn = document.createElement('button');
-    pasteBtn.className = 'icon-btn';
-    pasteBtn.id = 'pasteBtn';
-    pasteBtn.title = '粘贴导入';
-    pasteBtn.innerText = '📋';
-    headerActions.appendChild(pasteBtn);
+    // 侧边栏菜单项
+    const sidebarUpload = document.getElementById('sidebarUpload');
+    const sidebarDownload = document.getElementById('sidebarDownload');
+    const sidebarPasteImport = document.getElementById('sidebarPasteImport');
+    const sidebarCopyExport = document.getElementById('sidebarCopyExport');
+    const sidebarClear = document.getElementById('sidebarClear');
+    const sidebarLink = document.getElementById('sidebarLink');
+    const sidebarChangelog = document.getElementById('sidebarChangelog');
+    const sidebarVersion = document.getElementById('sidebarVersion');
 
     // ----- 辅助函数 -----
     function updateBalanceUI() {
@@ -142,7 +132,7 @@
         }
     }
 
-    // 执行抢红包逻辑
+    // ----- 红包核心功能 -----
     function performGrab(rpId, grabber) {
         const rp = redPackets.get(rpId);
         if (!rp) return null;
@@ -202,7 +192,6 @@
         return amount;
     }
 
-    // 展示红包封面
     function showRedpacketCover(rpId) {
         const rp = redPackets.get(rpId);
         if (!rp) return;
@@ -365,7 +354,10 @@
 
     function escapeHtml(unsafe) {
         return unsafe.replace(/[&<>"]/g, function(m) {
-            if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; if (m === '"') return '&quot;';
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            if (m === '"') return '&quot;';
             return m;
         });
     }
@@ -430,7 +422,7 @@
         });
     }
 
-    // ----- 加载外部规则文件 -----
+    // ----- 规则加载 -----
     async function loadRules() {
         try {
             const response = await fetch('./rules.json');
@@ -460,7 +452,7 @@
         }
     }
 
-    // ----- 加密存档 (localStorage + 文件) -----
+    // ----- 存档加密与存储 -----
     function getState() {
         return {
             myBalance,
@@ -495,16 +487,11 @@
         return true;
     }
 
-    // 保存到 localStorage (截断为最近300条)
     function saveToLocalStorage() {
         try {
             const fullState = getState();
-            // 截断 messages 为最近300条
-            const trimmedMessages = fullState.messages.slice(-300);
-            const stateToSave = {
-                ...fullState,
-                messages: trimmedMessages
-            };
+            const trimmedMessages = fullState.messages.slice(-300); // 保留最近300条
+            const stateToSave = { ...fullState, messages: trimmedMessages };
             const json = JSON.stringify(stateToSave);
             const encrypted = CryptoJS.AES.encrypt(json, STORAGE_KEY).toString();
             localStorage.setItem('redpacket_archive', encrypted);
@@ -527,7 +514,7 @@
         }
     }
 
-    // 导出为文件 (带选项)
+    // ----- 导出/导入功能（文件、粘贴）-----
     function exportArchiveWithOptions() {
         const msgLimit = parseInt(exportMsgCount.value, 10);
         const keepDetails = exportKeepDetails.checked;
@@ -564,7 +551,6 @@
         exportOptionsModal.classList.remove('show');
     }
 
-    // 新增：复制加密文本到剪贴板
     async function copyEncryptedToClipboard() {
         const msgLimit = parseInt(exportMsgCount.value, 10);
         const keepDetails = exportKeepDetails.checked;
@@ -589,12 +575,10 @@
             await navigator.clipboard.writeText(encrypted);
             alert('加密文本已复制到剪贴板！');
         } catch (err) {
-            // 降级方案：使用 prompt 显示文本
             prompt('复制失败，请手动复制以下加密文本：', encrypted);
         }
     }
 
-    // 新增：从剪贴板粘贴导入
     function importFromPastedText(encryptedText) {
         try {
             const decrypted = CryptoJS.AES.decrypt(encryptedText, STORAGE_KEY).toString(CryptoJS.enc.Utf8);
@@ -611,7 +595,6 @@
         }
     }
 
-    // 导入文件
     function importArchive(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -634,7 +617,48 @@
         reader.readAsText(file);
     }
 
-    // 初始演示数据
+    // ----- 清除数据 -----
+    function clearAllData() {
+        if (confirm('确定清除所有聊天记录、红包和余额？此操作不可恢复。')) {
+            myBalance = 100.0;
+            messages = [];
+            for (let [id, interval] of grabIntervals.entries()) {
+                clearInterval(interval);
+            }
+            grabIntervals.clear();
+            redPackets.clear();
+            recentRedpacketAmounts = [];
+            lastRedPacketTime = Date.now();
+            updateBalanceUI();
+            renderMessages();
+            saveToLocalStorage();
+        }
+    }
+
+    // ----- 读取版本号和更新日志 -----
+    async function fetchVersion() {
+        try {
+            const res = await fetch('./version.txt');
+            if (!res.ok) throw new Error();
+            const text = await res.text();
+            document.getElementById('versionContent').innerText = text.trim() || '未知版本';
+        } catch {
+            document.getElementById('versionContent').innerText = '未找到版本文件';
+        }
+    }
+
+    async function fetchChangelog() {
+        try {
+            const res = await fetch('./changelog.txt');
+            if (!res.ok) throw new Error();
+            const text = await res.text();
+            document.getElementById('changelogContent').innerText = text.trim() || '暂无更新记录';
+        } catch {
+            document.getElementById('changelogContent').innerText = '未找到更新日志文件';
+        }
+    }
+
+    // ----- 初始演示数据 -----
     function initDemo() {
         if (!loadFromLocalStorage()) {
             addTextMessage('小明', '欢迎来抢红包🧧');
@@ -664,6 +688,55 @@
     }, 20000);
 
     // ----- 事件绑定 -----
+    // 侧边栏开关
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
+    // 点击其他区域关闭侧边栏
+    document.addEventListener('click', (e) => {
+        if (!sidebar.contains(e.target) && !menuToggle.contains(e.target) && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // 侧边栏功能
+    sidebarUpload.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        importFileInput.click();
+    });
+    sidebarDownload.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        exportOptionsModal.classList.add('show');
+    });
+    sidebarPasteImport.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        pasteModal.classList.add('show');
+        document.getElementById('pasteArchiveText').value = '';
+    });
+    sidebarCopyExport.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        copyEncryptedToClipboard();
+    });
+    sidebarClear.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        clearAllData();
+    });
+    sidebarLink.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        window.open('https://xtt-xt.github.io/RedPacket-Rumble/', '_blank');
+    });
+    sidebarChangelog.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        fetchChangelog();
+        changelogModal.classList.add('show');
+    });
+    sidebarVersion.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        fetchVersion();
+        versionModal.classList.add('show');
+    });
+
+    // 发红包弹窗
     document.getElementById('showRedpacketModal').addEventListener('click', () => {
         modal.classList.add('show');
     });
@@ -682,6 +755,7 @@
         addRedpacket(MY_NAME, amount, count, blessing);
     });
 
+    // 发送消息
     document.getElementById('sendMsgBtn').addEventListener('click', () => {
         const input = document.getElementById('chatInput');
         const text = input.value.trim();
@@ -690,51 +764,25 @@
             input.value = '';
         }
     });
-
     document.getElementById('chatInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') document.getElementById('sendMsgBtn').click();
     });
 
+    // 关闭结果模态框（点击背景）
     openResultModal.addEventListener('click', (e) => {
         if (e.target === openResultModal) openResultModal.classList.remove('show');
     });
 
-    // 导出按钮显示选项弹窗
-    document.getElementById('exportBtn').addEventListener('click', () => {
-        exportOptionsModal.classList.add('show');
-    });
-
+    // 导出选项弹窗
     document.getElementById('cancelExport').addEventListener('click', () => {
         exportOptionsModal.classList.remove('show');
     });
-
     document.getElementById('confirmExport').addEventListener('click', exportArchiveWithOptions);
 
-    // 新增：复制按钮
-    const copyBtn = document.createElement('button');
-    copyBtn.className = 'btn-primary';
-    copyBtn.id = 'copyArchiveBtn';
-    copyBtn.innerText = '复制加密文本';
-    copyBtn.style.marginLeft = '8px';
-    // 插入到导出选项模态框的按钮组中
-    const exportModalActions = document.querySelector('#exportOptionsModal .modal-actions');
-    exportModalActions.insertBefore(copyBtn, exportModalActions.firstChild);
-
-    copyBtn.addEventListener('click', async () => {
-        await copyEncryptedToClipboard();
-        // 不关闭弹窗，方便继续操作
-    });
-
-    // 粘贴按钮
-    document.getElementById('pasteBtn').addEventListener('click', () => {
-        pasteModal.classList.add('show');
-        document.getElementById('pasteArchiveText').value = ''; // 清空
-    });
-
+    // 粘贴导入弹窗
     document.getElementById('cancelPaste').addEventListener('click', () => {
         pasteModal.classList.remove('show');
     });
-
     document.getElementById('confirmPaste').addEventListener('click', () => {
         const text = document.getElementById('pasteArchiveText').value.trim();
         if (text) {
@@ -744,15 +792,27 @@
             alert('请输入加密文本');
         }
     });
-
-    // 点击模态背景关闭
     pasteModal.addEventListener('click', (e) => {
         if (e.target === pasteModal) pasteModal.classList.remove('show');
     });
 
-    document.getElementById('importBtn').addEventListener('click', () => {
-        importFileInput.click();
+    // 更新日志弹窗
+    document.getElementById('closeChangelog').addEventListener('click', () => {
+        changelogModal.classList.remove('show');
     });
+    changelogModal.addEventListener('click', (e) => {
+        if (e.target === changelogModal) changelogModal.classList.remove('show');
+    });
+
+    // 版本号弹窗
+    document.getElementById('closeVersion').addEventListener('click', () => {
+        versionModal.classList.remove('show');
+    });
+    versionModal.addEventListener('click', (e) => {
+        if (e.target === versionModal) versionModal.classList.remove('show');
+    });
+
+    // 文件导入
     importFileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             importArchive(e.target.files[0]);
