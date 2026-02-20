@@ -8,29 +8,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 </head>
 <body>
-    <!-- 汉堡菜单按钮 -->
-    <div class="menu-toggle" id="menuToggle">☰</div>
-
-    <!-- 侧边栏 -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">红包派对</div>
-        <div class="sidebar-menu">
-            <div class="menu-item" id="sidebarUpload">📤 上传</div>
-            <div class="menu-item" id="sidebarDownload">📥 下载</div>
-            <div class="menu-item" id="sidebarPasteImport">📋 导入</div>
-            <div class="menu-item" id="sidebarCopyExport">📎 导出</div>
-            <div class="menu-item" id="sidebarClear">🗑️ 清除数据</div>
-            <div class="menu-item" id="sidebarLink">🔗 跳转链接</div>
-            <div class="menu-item" id="sidebarChangelog">📜 更新日志</div>
-            <div class="menu-item" id="sidebarVersion">🏷️ 版本号</div>
-        </div>
-        <div class="sidebar-footer">作者xtt</div>
-    </div>
-
     <!-- 主聊天界面 -->
     <div class="chat-container">
         <div class="chat-header">
             <div class="header-left">
+                <span class="menu-toggle" id="menuToggle">☰</span>
                 <span>🧧 红包派对</span>
             </div>
             <div class="header-actions">
@@ -44,6 +26,22 @@
             <input type="text" id="chatInput" placeholder="说句话..." maxlength="40">
             <button id="sendMsgBtn">发送</button>
         </div>
+    </div>
+
+    <!-- 侧边栏 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">红包派对</div>
+        <div class="sidebar-menu">
+            <div class="menu-item" id="sidebarUpload">📤 上传</div>
+            <div class="menu-item" id="sidebarDownload">📥 下载</div>
+            <div class="menu-item" id="sidebarPasteImport">📋 导入</div>
+            <div class="menu-item" id="sidebarCopyExport">📎 导出</div>
+            <div class="menu-item" id="sidebarClear">🗑️ 清除数据</div>
+            <div class="menu-item" id="sidebarLink">🔗 跳转链接</div>
+            <div class="menu-item" id="sidebarChangelog">📜 更新日志</div>
+        </div>
+        <div class="sidebar-version" id="sidebarVersionDisplay">加载中...</div>
+        <div class="sidebar-footer">作者xtt</div>
     </div>
 
     <!-- 隐藏的文件导入输入框 -->
@@ -106,17 +104,6 @@
             <div id="changelogContent" style="white-space: pre-wrap; font-size:14px; margin:16px 0;">加载中...</div>
             <div class="modal-actions">
                 <button class="btn-secondary" id="closeChangelog">关闭</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 版本号模态框 -->
-    <div class="modal" id="versionModal">
-        <div class="modal-card">
-            <h3>🏷️ 版本号</h3>
-            <div id="versionContent" style="font-size:18px; text-align:center; margin:20px 0;">加载中...</div>
-            <div class="modal-actions">
-                <button class="btn-secondary" id="closeVersion">关闭</button>
             </div>
         </div>
     </div>
