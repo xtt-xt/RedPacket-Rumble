@@ -40,9 +40,9 @@
     const exportKeepDetails = document.getElementById('exportKeepDetails');
     const pasteModal = document.getElementById('pasteImportModal');
     const changelogModal = document.getElementById('changelogModal');
-    const versionModal = document.getElementById('versionModal');
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
+    const sidebarVersionDisplay = document.getElementById('sidebarVersionDisplay');
 
     // 侧边栏菜单项
     const sidebarUpload = document.getElementById('sidebarUpload');
@@ -52,7 +52,6 @@
     const sidebarClear = document.getElementById('sidebarClear');
     const sidebarLink = document.getElementById('sidebarLink');
     const sidebarChangelog = document.getElementById('sidebarChangelog');
-    const sidebarVersion = document.getElementById('sidebarVersion');
 
     // ----- 辅助函数 -----
     function updateBalanceUI() {
@@ -635,18 +634,19 @@
         }
     }
 
-    // ----- 读取版本号和更新日志 -----
-    async function fetchVersion() {
+    // ----- 读取版本号并显示在侧边栏 -----
+    async function displayVersionInSidebar() {
         try {
             const res = await fetch('./version.txt');
             if (!res.ok) throw new Error();
             const text = await res.text();
-            document.getElementById('versionContent').innerText = text.trim() || '未知版本';
+            sidebarVersionDisplay.innerText = text.trim() || '未知版本';
         } catch {
-            document.getElementById('versionContent').innerText = '未找到版本文件';
+            sidebarVersionDisplay.innerText = '未找到版本文件';
         }
     }
 
+    // ----- 读取更新日志（弹窗）-----
     async function fetchChangelog() {
         try {
             const res = await fetch('./changelog.txt');
@@ -672,6 +672,7 @@
         await loadRules();
         initDemo();
         updateBalanceUI();
+        displayVersionInSidebar(); // 显示版本号
     }
 
     startApp();
@@ -729,11 +730,6 @@
         sidebar.classList.remove('open');
         fetchChangelog();
         changelogModal.classList.add('show');
-    });
-    sidebarVersion.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        fetchVersion();
-        versionModal.classList.add('show');
     });
 
     // 发红包弹窗
@@ -802,14 +798,6 @@
     });
     changelogModal.addEventListener('click', (e) => {
         if (e.target === changelogModal) changelogModal.classList.remove('show');
-    });
-
-    // 版本号弹窗
-    document.getElementById('closeVersion').addEventListener('click', () => {
-        versionModal.classList.remove('show');
-    });
-    versionModal.addEventListener('click', (e) => {
-        if (e.target === versionModal) versionModal.classList.remove('show');
     });
 
     // 文件导入
