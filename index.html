@@ -97,13 +97,13 @@
         </div>
     </div>
 
-    <!-- 更新日志模态框 -->
+    <!-- 更新日志模态框（支持多版本） -->
     <div class="modal" id="changelogModal">
         <div class="modal-card" style="width:350px; max-height:80vh; overflow-y:auto;">
-            <h3>📜 更新日志</h3>
+            <h3 id="changelogModalTitle">📜 更新日志</h3>
             <div id="changelogContent" style="white-space: pre-wrap; font-size:14px; margin:16px 0;">加载中...</div>
-            <div class="modal-actions">
-                <button class="btn-secondary" id="closeChangelog">关闭</button>
+            <div class="modal-actions" id="changelogActions">
+                <button class="btn-secondary" id="closeChangelogBtn">关闭</button>
             </div>
         </div>
     </div>
